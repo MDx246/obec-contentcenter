@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ภารกิจโค้ดดิ้ง: เมืองข้อมูล</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #14213d;
+      --muted: #52606d;
+      --panel: #ffffff;
+      --line: #d8e0ea;
+      --soft: #eef5f8;
+      --blue: #1c77c3;
+      --green: #2a9d8f;
+      --yellow: #f2c94c;
+      --red: #de5b52;
+      --tile: #f8fbfd;
+      --shadow: 0 14px 34px rgba(20, 33, 61, .14);
+      font-family: "Tahoma", "Noto Sans Thai", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(42, 157, 143, .18), transparent 24rem),
+        linear-gradient(135deg, #f7fbff 0%, #eef7f3 48%, #fff8e6 100%);
+    }
+
+    button, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 28px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      padding: 6px 0 18px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      max-width: 720px;
+    }
+
+    .scorebar {
+      display: grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 8px;
+      align-items: center;
+      justify-content: end;
+    }
+
+    .stat {
+      min-width: 96px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .82);
+      box-shadow: 0 6px 18px rgba(20, 33, 61, .08);
+    }
+
+    .stat b {
+      display: block;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(310px, 420px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .board-wrap, .side {
+      min-width: 0;
+    }
+
+    .mission {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: var(--shadow);
+    }
+
+    .mission h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .mission p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .level-select {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+    }
+
+    .level-select label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    select {
+      width: 164px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .board {
+      --size: min(72vw, 560px);
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      grid-template-rows: repeat(var(--rows), 1fr);
+      width: min(100%, var(--size));
+      aspect-ratio: var(--cols) / var(--rows);
+      border: 2px solid #a7b8c9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #e8f1f5;
+      box-shadow: var(--shadow);
+    }
+
+    .tile {
+      position: relative;
+      display: grid;
+      place-items: center;
+      border-right: 1px solid #cbd8e3;
+      border-bottom: 1px solid #cbd8e3;
+      background: linear-gradient(145deg, #fbfdff, var(--tile));
+    }
+
+    .tile:nth-child(2n) {
+      background: linear-gradient(145deg, #f5fbf9, #edf6f2);
+    }
+
+    .tile.wall {
+      background:
+        linear-gradient(135deg, rgba(20, 33, 61, .18) 25%, transparent 25%) 0 0 / 18px 18px,
+        linear-gradient(135deg, #51606f, #2f3b49);
+    }
+
+    .tile .icon {
+      width: 68%;
+      height: 68%;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      font-size: clamp(24px, 5vw, 42px);
+      line-height: 1;
+    }
+
+    .data .icon {
+      background: #d8f3dc;
+      color: #176d5d;
+      border: 2px solid rgba(42, 157, 143, .45);
+    }
+
+    .bug .icon {
+      background: #ffe5df;
+      color: #a5312c;
+      border: 2px solid rgba(222, 91, 82, .45);
+    }
+
+    .portal .icon {
+      background: #fff1b8;
+      color: #8d6500;
+      border: 2px solid rgba(242, 201, 76, .75);
+    }
+
+    .robot {
+      position: absolute;
+      z-index: 5;
+      width: calc(100% / var(--cols));
+      height: calc(100% / var(--rows));
+      display: grid;
+      place-items: center;
+      transform: translate(var(--x), var(--y));
+      transition: transform .28s ease;
+      pointer-events: none;
+    }
+
+    .robot svg {
+      width: 78%;
+      height: 78%;
+      filter: drop-shadow(0 8px 10px rgba(20, 33, 61, .18));
+      transform: rotate(var(--rot));
+      transition: transform .18s ease;
+    }
+
+    .side {
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .9);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(238, 245, 248, .74);
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .hint-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #ecf7ff;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .commands {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .cmd {
+      min-height: 44px;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--blue);
+      box-shadow: inset 0 -3px rgba(0, 0, 0, .12);
+      font-weight: 700;
+    }
+
+    .cmd.turn {
+      background: var(--green);
+    }
+
+    .cmd.loop {
+      background: #7b61a8;
+    }
+
+    .cmd.cond {
+      background: #b36b00;
+    }
+
+    .program {
+      display: grid;
+      gap: 8px;
+      min-height: 130px;
+      padding: 10px;
+      border: 1px dashed #9eb2c3;
+      border-radius: 8px;
+      background: #f7fbfd;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 92px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 8px 8px 10px;
+      border-radius: 8px;
+      background: #eaf4fb;
+      border: 1px solid #bed5e8;
+      font-weight: 700;
+    }
+
+    .step small {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .remove {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--red);
+      border: 1px solid #ffd0c9;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .primary, .secondary {
+      min-height: 46px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+
+    .primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .primary:disabled {
+      cursor: wait;
+      opacity: .62;
+    }
+
+    .secondary {
+      color: var(--ink);
+      background: #edf3f7;
+      border: 1px solid var(--line);
+    }
+
+    .feedback {
+      min-height: 58px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #f7fbfd;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .feedback.good {
+      color: #176d5d;
+      background: #e8f7ef;
+      border-color: #afe0c4;
+    }
+
+    .feedback.bad {
+      color: #9d2f2b;
+      background: #fff0ed;
+      border-color: #ffc8bf;
+    }
+
+    .lesson {
+      display: grid;
+      gap: 10px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .lesson strong {
+      color: var(--ink);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #edf2f5;
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      width: var(--progress);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--yellow));
+      transition: width .25s ease;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(20, 33, 61, .46);
+      z-index: 20;
+    }
+
+    .overlay.show {
+      display: grid;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .24);
+      overflow: hidden;
+    }
+
+    .modal h3 {
+      margin: 0;
+      padding: 16px 18px 10px;
+      font-size: 22px;
+    }
+
+    .modal p {
+      margin: 0;
+      padding: 0 18px 16px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .modal .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+      background: #f7fbfd;
+    }
+
+    @media (max-width: 880px) {
+      header, main {
+        grid-template-columns: 1fr;
+      }
+
+      .scorebar {
+        justify-content: stretch;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .mission {
+        grid-template-columns: 1fr;
+      }
+
+      .level-select {
+        justify-items: stretch;
+      }
+
+      select {
+        width: 100%;
+      }
+
+      .board {
+        --size: 100vw;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        width: min(100% - 16px, 1180px);
+        padding-top: 12px;
+      }
+
+      .stat {
+        min-width: 0;
+        padding: 8px;
+      }
+
+      .stat b {
+        font-size: 17px;
+      }
+
+      .commands, .actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>ภารกิจโค้ดดิ้ง: เมืองข้อมูล</h1>
+        <p class="subtitle">จัดชุดคำสั่งให้หุ่นยนต์เดินเก็บข้อมูล หลบข้อผิดพลาด และไปถึงประตูส่งงาน ฝึกคิดแบบอัลกอริทึมทีละขั้น</p>
+      </div>
+      <div class="scorebar" aria-label="คะแนน">
+        <div class="stat"><b id="score">0</b><span>คะแนน</span></div>
+        <div class="stat"><b id="stars">0/5</b><span>ด่านผ่าน</span></div>
+        <div class="stat"><b id="moves">0</b><span>คำสั่ง</span></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="board-wrap" aria-label="พื้นที่เล่นเกม">
+        <div class="mission">
+          <div>
+            <h2 id="levelTitle">ด่านที่ 1</h2>
+            <p id="levelGoal">เป้าหมายของภารกิจ</p>
+          </div>
+          <div class="level-select">
+            <label for="levelPicker">เลือกด่าน</label>
+            <select id="levelPicker" aria-label="เลือกด่าน"></select>
+          </div>
+        </div>
+        <div id="board" class="board" aria-label="กระดานเกม"></div>
+      </section>
+
+      <aside class="side">
+        <section class="panel" aria-label="ชุดคำสั่ง">
+          <div class="panel-head">
+            <h3>กล่องคำสั่ง</h3>
+            <button id="hintBtn" class="hint-btn" type="button" title="คำใบ้">?</button>
+          </div>
+          <div class="panel-body">
+            <div class="commands">
+              <button class="cmd" type="button" data-command="forward">เดินหน้า</button>
+              <button class="cmd turn" type="button" data-command="left">เลี้ยวซ้าย</button>
+              <button class="cmd turn" type="button" data-command="right">เลี้ยวขวา</button>
+              <button class="cmd loop" type="button" data-command="repeat2">ทำซ้ำ 2 ครั้ง</button>
+              <button class="cmd loop" type="button" data-command="repeat3">ทำซ้ำ 3 ครั้ง</button>
+              <button class="cmd cond" type="button" data-command="scan">สแกนก่อนเดิน</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="โปรแกรมของฉัน">
+          <div class="panel-head">
+            <h3>โปรแกรมของฉัน</h3>
+            <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+          </div>
+          <div class="panel-body">
+            <div id="program" class="program" aria-live="polite"></div>
+            <div class="actions">
+              <button id="runBtn" class="primary" type="button">เริ่มรัน</button>
+              <button id="clearBtn" class="secondary" type="button">ล้างคำสั่ง</button>
+            </div>
+            <div id="feedback" class="feedback">เลือกคำสั่งจากกล่องด้านบน แล้วกดเริ่มรันเมื่อพร้อม</div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="แนวคิดที่ฝึก">
+          <div class="panel-head">
+            <h3>แนวคิดวิทยาการคำนวณ</h3>
+          </div>
+          <div class="panel-body lesson">
+            <div><strong>ลำดับขั้นตอน:</strong> คำสั่งทำงานจากบนลงล่าง เหมือนสูตรแก้ปัญหาที่ชัดเจน</div>
+            <div><strong>การทำซ้ำ:</strong> ใช้คำสั่งทำซ้ำเมื่อมีรูปแบบเดิม เพื่อลดจำนวนคำสั่ง</div>
+            <div><strong>การตรวจสอบ:</strong> สแกนก่อนเดินช่วยหลบข้อผิดพลาด เหมือนการใช้เงื่อนไขในโปรแกรม</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h3 id="modalTitle">คำใบ้</h3>
+      <p id="modalText"></p>
+      <div class="modal-actions">
+        <button id="closeModal" class="primary" type="button">เข้าใจแล้ว</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const levels = [
+      {
+        title: "ด่านที่ 1: ลำดับคำสั่ง",
+        goal: "เก็บข้อมูล 1 ชิ้น แล้วไปที่ประตูส่งงาน",
+        hint: "เริ่มจากเดินไปทางขวาเพื่อเก็บข้อมูล จากนั้นเดินต่อไปยังประตู",
+        rows: 4,
+        cols: 5,
+        start: { x: 0, y: 1, dir: 1 },
+        data: [{ x: 2, y: 1 }],
+        bugs: [],
+        walls: [],
+        portal: { x: 4, y: 1 },
+        max: 5,
+        unlock: ["forward", "left", "right"]
+      },
+      {
+        title: "ด่านที่ 2: เลี้ยวให้ถูกทาง",
+        goal: "เดินอ้อมกำแพง เก็บข้อมูล และไปถึงประตู",
+        hint: "หุ่นยนต์เริ่มหันขวา ลองเดินหน้า เลี้ยวลง แล้วเลี้ยวกลับไปทางขวา",
+        rows: 5,
+        cols: 5,
+        start: { x: 0, y: 0, dir: 1 },
+        data: [{ x: 3, y: 2 }],
+        bugs: [],
+        walls: [{ x: 2, y: 0 }, { x: 2, y: 1 }],
+        portal: { x: 4, y: 4 },
+        max: 10,
+        unlock: ["forward", "left", "right"]
+      },
+      {
+        title: "ด่านที่ 3: รูปแบบซ้ำ",
+        goal: "ใช้การทำซ้ำช่วยให้โปรแกรมสั้นลง",
+        hint: "มีทางตรงยาวหลายช่วง ใช้ทำซ้ำ 2 หรือ 3 ครั้งก่อนคำสั่งเดินหน้าเพื่อประหยัดคำสั่ง",
+        rows: 5,
+        cols: 6,
+        start: { x: 0, y: 4, dir: 1 },
+        data: [{ x: 3, y: 4 }, { x: 5, y: 2 }],
+        bugs: [],
+        walls: [{ x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }],
+        portal: { x: 5, y: 0 },
+        max: 9,
+        unlock: ["forward", "left", "right", "repeat2", "repeat3"]
+      },
+      {
+        title: "ด่านที่ 4: ตรวจสอบก่อนเดิน",
+        goal: "เก็บข้อมูลให้ครบ หลบบั๊ก แล้วส่งงาน",
+        hint: "ถ้าทางข้างหน้ามีบั๊ก คำสั่งสแกนก่อนเดินจะไม่ให้เดินเข้าไป ลองใช้ร่วมกับการเลี้ยว",
+        rows: 5,
+        cols: 6,
+        start: { x: 0, y: 2, dir: 1 },
+        data: [{ x: 2, y: 2 }, { x: 4, y: 1 }],
+        bugs: [{ x: 3, y: 2 }],
+        walls: [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 3 }, { x: 1, y: 4 }],
+        portal: { x: 5, y: 1 },
+        max: 12,
+        unlock: ["forward", "left", "right", "repeat2", "repeat3", "scan"]
+      },
+      {
+        title: "ด่านที่ 5: ภารกิจนักออกแบบอัลกอริทึม",
+        goal: "วางแผนให้สั้น เก็บข้อมูล 3 ชิ้น และไปถึงประตู",
+        hint: "มองหารูปแบบการเดินเป็นช่วง ๆ ก่อน แล้วค่อยใส่คำสั่งเลี้ยวเชื่อมแต่ละช่วง",
+        rows: 6,
+        cols: 6,
+        start: { x: 0, y: 5, dir: 1 },
+        data: [{ x: 2, y: 5 }, { x: 4, y: 3 }, { x: 1, y: 1 }],
+        bugs: [{ x: 3, y: 5 }, { x: 3, y: 2 }],
+        walls: [{ x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 4, y: 4 }],
+        portal: { x: 5, y: 0 },
+        max: 16,
+        unlock: ["forward", "left", "right", "repeat2", "repeat3", "scan"]
+      }
+    ];
+
+    const commandText = {
+      forward: ["เดินหน้า", "ไปข้างหน้า 1 ช่อง"],
+      left: ["เลี้ยวซ้าย", "หมุน 90 องศา"],
+      right: ["เลี้ยวขวา", "หมุน 90 องศา"],
+      repeat2: ["ทำซ้ำ 2 ครั้ง", "คำสั่งถัดไปทำ 2 รอบ"],
+      repeat3: ["ทำซ้ำ 3 ครั้ง", "คำสั่งถัดไปทำ 3 รอบ"],
+      scan: ["สแกนก่อนเดิน", "ถ้าข้างหน้าไม่ใช่บั๊กจึงเดิน"]
+    };
+
+    const dirs = [
+      { x: 0, y: -1, rot: "-90deg" },
+      { x: 1, y: 0, rot: "0deg" },
+      { x: 0, y: 1, rot: "90deg" },
+      { x: -1, y: 0, rot: "180deg" }
+    ];
+
+    const state = {
+      levelIndex: 0,
+      program: [],
+      score: 0,
+      completed: new Set(),
+      running: false,
+      robot: null,
+      collected: new Set()
+    };
+
+    const board = document.getElementById("board");
+    const programEl = document.getElementById("program");
+    const feedback = document.getElementById("feedback");
+    const runBtn = document.getElementById("runBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const levelPicker = document.getElementById("levelPicker");
+    const scoreEl = document.getElementById("score");
+    const starsEl = document.getElementById("stars");
+    const movesEl = document.getElementById("moves");
+    const progressBar = document.getElementById("progressBar");
+    const levelTitle = document.getElementById("levelTitle");
+    const levelGoal = document.getElementById("levelGoal");
+    const overlay = document.getElementById("overlay");
+    const modalText = document.getElementById("modalText");
+
+    function setup() {
+      levels.forEach((level, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = level.title;
+        levelPicker.appendChild(option);
+      });
+
+      document.querySelectorAll("[data-command]").forEach((button) => {
+        button.addEventListener("click", () => addCommand(button.dataset.command));
+      });
+
+      runBtn.addEventListener("click", runProgram);
+      clearBtn.addEventListener("click", clearProgram);
+      levelPicker.addEventListener("change", () => loadLevel(Number(levelPicker.value)));
+      document.getElementById("hintBtn").addEventListener("click", showHint);
+      document.getElementById("closeModal").addEventListener("click", hideModal);
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) hideModal();
+      });
+
+      loadProgress();
+      loadLevel(0);
+    }
+
+    function loadProgress() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("codingCityProgress") || "{}");
+        state.score = Number(saved.score || 0);
+        state.completed = new Set(saved.completed || []);
+      } catch (error) {
+        state.score = 0;
+        state.completed = new Set();
+      }
+    }
+
+    function saveProgress() {
+      localStorage.setItem("codingCityProgress", JSON.stringify({
+        score: state.score,
+        completed: [...state.completed]
+      }));
+    }
+
+    function loadLevel(index) {
+      state.levelIndex = index;
+      state.program = [];
+      state.running = false;
+      resetRobot();
+      renderLevel();
+      renderProgram();
+      setFeedback("เลือกคำสั่งจากกล่องด้านบน แล้วกดเริ่มรันเมื่อพร้อม");
+    }
+
+    function resetRobot() {
+      const level = currentLevel();
+      state.robot = { ...level.start };
+      state.collected = new Set();
+    }
+
+    function currentLevel() {
+      return levels[state.levelIndex];
+    }
+
+    function renderLevel() {
+      const level = currentLevel();
+      levelPicker.value = String(state.levelIndex);
+      levelTitle.textContent = level.title;
+      levelGoal.textContent = level.goal;
+      board.innerHTML = "";
+      board.style.setProperty("--rows", level.rows);
+      board.style.setProperty("--cols", level.cols);
+
+      for (let y = 0; y < level.rows; y += 1) {
+        for (let x = 0; x < level.cols; x += 1) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          tile.setAttribute("aria-label", `ช่อง ${x + 1}, ${y + 1}`);
+          if (hasAt(level.walls, x, y)) tile.classList.add("wall");
+          if (hasAt(level.data, x, y)) addIcon(tile, "data", "01");
+          if (hasAt(level.bugs, x, y)) addIcon(tile, "bug", "!");
+          if (level.portal.x === x && level.portal.y === y) addIcon(tile, "portal", "OK");
+          board.appendChild(tile);
+        }
+      }
+
+      const robot = document.createElement("div");
+      robot.className = "robot";
+      robot.innerHTML = robotSvg();
+      board.appendChild(robot);
+      updateRobot();
+      updateCommandAvailability();
+      updateStats();
+    }
+
+    function addIcon(tile, type, text) {
+      tile.classList.add(type);
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = text;
+      tile.appendChild(icon);
+    }
+
+    function robotSvg() {
+      return `
+        <svg viewBox="0 0 100 100" role="img" aria-label="หุ่นยนต์">
+          <path d="M12 50 L48 14 Q53 10 58 14 L88 50 Q91 54 88 58 L58 86 Q53 90 48 86 L12 58 Q8 54 12 50Z" fill="#1c77c3"/>
+          <circle cx="48" cy="50" r="24" fill="#ffffff"/>
+          <circle cx="40" cy="45" r="5" fill="#14213d"/>
+          <circle cx="58" cy="45" r="5" fill="#14213d"/>
+          <path d="M39 61 Q50 70 62 61" fill="none" stroke="#2a9d8f" stroke-width="5" stroke-linecap="round"/>
+          <path d="M72 50 L94 42 L94 58 Z" fill="#f2c94c"/>
+        </svg>
+      `;
+    }
+
+    function updateCommandAvailability() {
+      const unlocked = new Set(currentLevel().unlock);
+      document.querySelectorAll("[data-command]").forEach((button) => {
+        const available = unlocked.has(button.dataset.command);
+        button.disabled = !available;
+        button.style.opacity = available ? "1" : ".38";
+        button.title = available ? "" : "คำสั่งนี้จะปลดล็อกในด่านถัดไป";
+      });
+    }
+
+    function addCommand(command) {
+      if (state.running) return;
+      state.program.push(command);
+      renderProgram();
+      setFeedback("เพิ่มคำสั่งแล้ว ลองจัดลำดับให้พาหุ่นยนต์ถึงเป้าหมาย");
+    }
+
+    function renderProgram() {
+      programEl.innerHTML = "";
+      if (!state.program.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "ยังไม่มีคำสั่ง";
+        programEl.appendChild(empty);
+      }
+
+      state.program.forEach((command, index) => {
+        const row = document.createElement("div");
+        row.className = "step";
+        const label = document.createElement("div");
+        label.innerHTML = `${index + 1}. ${commandText[command][0]}<br><small>${commandText[command][1]}</small>`;
+        const remove = document.createElement("button");
+        remove.className = "remove";
+        remove.type = "button";
+        remove.setAttribute("aria-label", `ลบคำสั่งที่ ${index + 1}`);
+        remove.textContent = "x";
+        remove.addEventListener("click", () => {
+          if (state.running) return;
+          state.program.splice(index, 1);
+          renderProgram();
+        });
+        row.append(label, remove);
+        programEl.appendChild(row);
+      });
+
+      updateStats();
+    }
+
+    async function runProgram() {
+      if (state.running || state.program.length === 0) {
+        if (!state.program.length) setFeedback("ต้องมีอย่างน้อย 1 คำสั่งก่อนเริ่มรัน", "bad");
+        return;
+      }
+
+      state.running = true;
+      runBtn.disabled = true;
+      clearBtn.disabled = true;
+      resetRobot();
+      updateRobot();
+      setFeedback("กำลังรันโปรแกรมทีละคำสั่ง...");
+      await sleep(320);
+
+      const expanded = expandProgram(state.program);
+      let failed = "";
+      for (const command of expanded) {
+        const result = await execute(command);
+        collectData();
+        if (!result.ok) {
+          failed = result.message;
+          break;
+        }
+        await sleep(260);
+      }
+
+      state.running = false;
+      runBtn.disabled = false;
+      clearBtn.disabled = false;
+      checkResult(failed);
+    }
+
+    function expandProgram(program) {
+      const expanded = [];
+      for (let i = 0; i < program.length; i += 1) {
+        const command = program[i];
+        if (command === "repeat2" || command === "repeat3") {
+          const times = command === "repeat2" ? 2 : 3;
+          const next = program[i + 1];
+          if (next && next !== "repeat2" && next !== "repeat3") {
+            for (let round = 0; round < times; round += 1) expanded.push(next);
+            i += 1;
+          }
+        } else {
+          expanded.push(command);
+        }
+      }
+      return expanded;
+    }
+
+    async function execute(command) {
+      if (command === "left") {
+        state.robot.dir = (state.robot.dir + 3) % 4;
+        updateRobot();
+        return { ok: true };
+      }
+
+      if (command === "right") {
+        state.robot.dir = (state.robot.dir + 1) % 4;
+        updateRobot();
+        return { ok: true };
+      }
+
+      if (command === "scan") {
+        const next = nextCell();
+        if (isBug(next.x, next.y)) {
+          setFeedback("สแกนพบว่าข้างหน้ามีบั๊ก จึงหยุดเดินหนึ่งจังหวะ");
+          await sleep(340);
+          return { ok: true };
+        }
+        return moveForward();
+      }
+
+      if (command === "forward") {
+        return moveForward();
+      }
+
+      return { ok: true };
+    }
+
+    function moveForward() {
+      const next = nextCell();
+      const level = currentLevel();
+      if (next.x < 0 || next.y < 0 || next.x >= level.cols || next.y >= level.rows) {
+        return { ok: false, message: "หุ่นยนต์ออกนอกเมือง ลองเพิ่มคำสั่งเลี้ยวก่อนเดินหน้า" };
+      }
+      if (hasAt(level.walls, next.x, next.y)) {
+        return { ok: false, message: "ชนกำแพง ลองวางแผนเส้นทางใหม่" };
+      }
+      if (isBug(next.x, next.y)) {
+        return { ok: false, message: "เดินเข้าไปเจอบั๊ก ลองใช้สแกนก่อนเดินหรือเปลี่ยนเส้นทาง" };
+      }
+      state.robot.x = next.x;
+      state.robot.y = next.y;
+      updateRobot();
+      return { ok: true };
+    }
+
+    function nextCell() {
+      const dir = dirs[state.robot.dir];
+      return { x: state.robot.x + dir.x, y: state.robot.y + dir.y };
+    }
+
+    function collectData() {
+      const level = currentLevel();
+      level.data.forEach((item, index) => {
+        if (item.x === state.robot.x && item.y === state.robot.y) {
+          state.collected.add(index);
+        }
+      });
+    }
+
+    function checkResult(failed) {
+      const level = currentLevel();
+      if (failed) {
+        setFeedback(failed, "bad");
+        return;
+      }
+
+      const atPortal = state.robot.x === level.portal.x && state.robot.y === level.portal.y;
+      const allData = state.collected.size === level.data.length;
+      if (atPortal && allData) {
+        const efficient = state.program.length <= level.max;
+        const bonus = efficient ? 20 : 8;
+        if (!state.completed.has(state.levelIndex)) {
+          state.score += 80 + bonus;
+          state.completed.add(state.levelIndex);
+          saveProgress();
+        }
+        const note = efficient
+          ? "เยี่ยมมาก โปรแกรมสั้นและทำงานครบเป้าหมาย"
+          : "ผ่านแล้ว ลองลดจำนวนคำสั่งให้สั้นกว่านี้เพื่อฝึกการทำซ้ำ";
+        setFeedback(note, "good");
+      } else if (!allData) {
+        setFeedback("ยังเก็บข้อมูลไม่ครบ ลองให้เส้นทางผ่านช่องข้อมูลทุกชิ้น", "bad");
+      } else {
+        setFeedback("เก็บข้อมูลครบแล้ว แต่ยังไม่ถึงประตูส่งงาน", "bad");
+      }
+      updateStats();
+    }
+
+    function clearProgram() {
+      if (state.running) return;
+      state.program = [];
+      resetRobot();
+      updateRobot();
+      renderProgram();
+      setFeedback("ล้างคำสั่งแล้ว เริ่มวางแผนใหม่ได้เลย");
+    }
+
+    function updateRobot() {
+      const robot = board.querySelector(".robot");
+      if (!robot) return;
+      const level = currentLevel();
+      robot.style.setProperty("--x", `${state.robot.x * 100}%`);
+      robot.style.setProperty("--y", `${state.robot.y * 100}%`);
+      robot.style.setProperty("--rot", dirs[state.robot.dir].rot);
+      board.style.setProperty("--cols", level.cols);
+      board.style.setProperty("--rows", level.rows);
+    }
+
+    function updateStats() {
+      const level = currentLevel();
+      scoreEl.textContent = String(state.score);
+      starsEl.textContent = `${state.completed.size}/${levels.length}`;
+      movesEl.textContent = String(state.program.length);
+      const used = Math.min(100, Math.round((state.program.length / level.max) * 100));
+      progressBar.style.setProperty("--progress", `${used}%`);
+    }
+
+    function setFeedback(message, type = "") {
+      feedback.textContent = message;
+      feedback.className = `feedback ${type}`.trim();
+    }
+
+    function showHint() {
+      modalText.textContent = currentLevel().hint;
+      overlay.classList.add("show");
+    }
+
+    function hideModal() {
+      overlay.classList.remove("show");
+    }
+
+    function hasAt(list, x, y) {
+      return list.some((item) => item.x === x && item.y === y);
+    }
+
+    function isBug(x, y) {
+      return hasAt(currentLevel().bugs, x, y);
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    setup();
+  </script>
+</body>
+</html>
